@@ -3,11 +3,13 @@ import plotly.express as px
 import streamlit as st
 from datetime import datetime
 import pytz
+import os
 
 ist = pytz.timezone("Asia/Kolkata")
 current_time = datetime.now(ist).time()
 
-file_path = r"C:\Users\rraks\OneDrive\Desktop\Google_PlayStore_Analytics\task 2\googleplaystore.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(BASE_DIR, "data", "googleplaystore.csv")
 
 try:
     df = pd.read_csv(file_path)
@@ -15,7 +17,7 @@ except pd.errors.EmptyDataError:
     st.error("The CSV file is empty or corrupted.")
     st.stop()
 except FileNotFoundError:
-    st.error("File not found. Please check the path.")
+    st.error("File not found. Make sure 'googleplaystore.csv' is inside the 'data' folder.")
     st.stop()
 
 required_cols = ['Category', 'Installs']
@@ -56,7 +58,7 @@ agg = df_top.groupby(['Country', 'Category'])['Installs'].sum().reset_index()
 start_time = datetime.strptime("18:00", "%H:%M").time()
 end_time = datetime.strptime("20:00", "%H:%M").time()
 
-st.title("Google Play Store Analytics ")
+st.title("Google Play Store Analytics")
 st.subheader("Interactive Choropleth Map of Global Installs by Category")
 st.write(f"Current IST time: {datetime.now(ist).strftime('%I:%M %p')}")
 

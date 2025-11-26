@@ -6,43 +6,50 @@ from plotly.subplots import make_subplots
 import os
 import re
 
-st.set_page_config(page_title=" Google Play Store Analytics", layout="wide")
+st.set_page_config(page_title="Google Play Store Analytics", layout="wide")
+
 def parse_number(x):
-    if pd.isna(x): return np.nan
+    if pd.isna(x):
+        return np.nan
     x = str(x).replace('+','').replace(',','').replace('$','').strip().lower()
     try:
-        if x.endswith('k'): return float(x[:-1]) * 1_000
-        if x.endswith('m'): return float(x[:-1]) * 1_000_000
+        if x.endswith('k'):
+            return float(x[:-1]) * 1_000
+        if x.endswith('m'):
+            return float(x[:-1]) * 1_000_000
         return float(x)
     except:
         return np.nan
 
 def parse_android_ver(s):
-    if pd.isna(s): return np.nan
+    if pd.isna(s):
+        return np.nan
     m = re.search(r"(\d+(?:\.\d+)?)", str(s))
     return float(m.group(1)) if m else np.nan
 
 def parse_size(s):
-    if pd.isna(s): return np.nan
+    if pd.isna(s):
+        return np.nan
     s = str(s).lower().strip()
-    if s in ("varies with device", ""): return np.nan
+    if s in ("varies with device", ""):
+        return np.nan
     try:
-        if s.endswith('m'): return float(s[:-1])
-        if s.endswith('k'): return float(s[:-1]) / 1000
+        if s.endswith('m'):
+            return float(s[:-1])
+        if s.endswith('k'):
+            return float(s[:-1]) / 1000
         return float(s)
     except:
         return np.nan
 
-
 def load_data(path):
     if not os.path.exists(path):
-        st.error("CSV file not found. Please check the file path.")
+        st.error(f"CSV file not found. Expected at: {path}")
         return pd.DataFrame()
 
     df = pd.read_csv(path)
     df.columns = [c.strip() for c in df.columns]
 
-   
     if 'Installs' in df.columns:
         df['Installs_parsed'] = df['Installs'].apply(parse_number)
     else:
@@ -58,7 +65,6 @@ def load_data(path):
     else:
         df['Size_M'] = np.nan
 
-    
     if 'Revenue' in df.columns:
         df['Revenue_parsed'] = df['Revenue'].apply(parse_number)
     elif 'Price' in df.columns:
@@ -67,10 +73,8 @@ def load_data(path):
     else:
         df['Revenue_parsed'] = np.nan
 
-    
     df['App_name_len'] = df['App'].astype(str).apply(len)
 
-    
     if 'Type' in df.columns:
         df['Type'] = df['Type'].fillna('Free')
     else:
@@ -78,20 +82,16 @@ def load_data(path):
 
     return df
 
-
 def apply_filters(df):
-    if df.empty: 
+    if df.empty:
         return df
 
     df = df.copy()
-
-    
     for col in ['Installs_parsed', 'Revenue_parsed', 'Android_ver_parsed', 'Size_M']:
         if col not in df.columns:
             df[col] = np.nan
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
-    
     min_installs = df['Installs_parsed'].quantile(0.25)
     min_revenue = df['Revenue_parsed'].quantile(0.25)
     min_size = df['Size_M'].quantile(0.25)
@@ -120,34 +120,33 @@ def build_chart(summary_df):
 
     fig.add_trace(go.Bar(x=x, y=installs, name='Avg Installs'), secondary_y=False)
     fig.add_trace(go.Scatter(x=x, y=revenue, mode='lines+markers', name='Avg Revenue'), secondary_y=True)
-    fig.update_layout(title='Average Installs vs Average Revenue (Free vs Paid Apps)', 
+    fig.update_layout(title='Average Installs vs Average Revenue (Free vs Paid Apps)',
                       xaxis_title='Category - Type', barmode='group', template='plotly_white')
     fig.update_yaxes(title_text="Average Installs", secondary_y=False)
     fig.update_yaxes(title_text="Average Revenue", secondary_y=True)
     return fig
 
-
 def main():
-    st.title(" Google Play Store Data Analytics")
+    st.title("Google Play Store Data Analytics")
 
-    path = r"C:\Users\rraks\OneDrive\Desktop\Google_PlayStore_Analytics\task 3\googleplaystore.csv"
-    df = load_data(path)
+    BASE_DIR = os.path.dirname(__file__)
+    file_path = os.path.join(BASE_DIR, "data", "googleplaystore.csv")
+    df = load_data(file_path)
 
     if df.empty:
         st.stop()
 
-    st.success(f" Loaded {len(df)} rows")
+    st.success(f"Loaded {len(df)} rows")
 
     filtered = apply_filters(df)
     st.info(f"Rows after filtering: {len(filtered)}")
 
     if filtered.empty:
-        st.warning(" No data left after filtering — showing partial dataset instead.")
+        st.warning("No data left after filtering — showing partial dataset instead.")
         filtered = df.copy()
 
-    
     if 'Category' not in filtered.columns:
-        st.error(" No 'Category' column found in dataset.")
+        st.error("No 'Category' column found in dataset.")
         st.stop()
 
     top3 = filtered.groupby('Category')['Installs_parsed'].sum().nlargest(3).index.tolist()

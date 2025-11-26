@@ -2,23 +2,34 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 from datetime import datetime, timezone, timedelta
-
+import os
 
 def size_to_mb(x):
     try:
         if pd.isna(x) or x == 'Varies with device':
             return None
-        x = x.replace('M','').replace('k','')
+        x = x.lower().replace('m','').replace('k','')
         if 'k' in x:
-            return float(x.replace('k',''))/1024
+            return float(x.replace('k','')) / 1024
         return float(x)
     except:
         return None
 
+st.set_page_config(page_title="Google Play Store Bubble Chart", layout="wide")
+st.sidebar.title("Filters")
+test_mode = st.sidebar.checkbox("Test Mode (show chart anytime)", value=True)
 
-file_path = r"C:\Users\rraks\Downloads\archive\googleplaystore.csv"
-df = pd.read_csv(file_path)
+data_file = os.path.join("data", "googleplaystore.csv")
 
+if not os.path.exists(data_file):
+    st.error("CSV file not found. Make sure 'googleplaystore.csv' is inside the 'data' folder.")
+    st.stop()
+
+df = pd.read_csv(data_file)
+
+if df.empty:
+    st.error("CSV file is empty. Check the file content.")
+    st.stop()
 
 df = df.dropna(subset=['App','Category','Rating','Installs','Size'])
 
@@ -43,21 +54,14 @@ df['Size_MB'] = df['Size'].apply(size_to_mb)
 df = df.dropna(subset=['Rating','Reviews','Installs','Size_MB'])
 
 
-st.set_page_config(page_title="Google Play Store Bubble Chart", layout="wide")
-st.sidebar.title("Filters")
-test_mode = st.sidebar.checkbox("Test Mode (show chart anytime)", value=True)
+
 
 all_categories = df['Category_Translated'].unique()
 selected_categories = st.sidebar.multiselect("Select Categories", all_categories, default=list(all_categories))
 
 df_filtered = df[df['Category_Translated'].isin(selected_categories)]
 
-
-df_filtered = df_filtered[
-    (df_filtered['Rating'] > 3.0) &    
-    (df_filtered['Reviews'] > 50) &   
-    (df_filtered['Installs'] > 50000)  
-]
+df_filtered = df_filtered[(df_filtered['Rating'] > 3.0) & (df_filtered['Reviews'] > 50) & (df_filtered['Installs'] > 50000)]
 
 st.title("Google Play Store Bubble Chart")
 
@@ -70,8 +74,6 @@ if test_mode or (17 <= current_hour_ist <= 19):
     if df_filtered.empty:
         st.warning("No apps match the selected filters. Adjust sidebar options.")
     else:
-        
-        color_map = {cat: ('pink' if cat=='Game' else None) for cat in df_filtered['Category_Translated'].unique()}
 
         fig = px.scatter(
             df_filtered,
@@ -79,7 +81,7 @@ if test_mode or (17 <= current_hour_ist <= 19):
             y='Rating',
             size='Installs',
             color='Category_Translated',
-            color_discrete_map=color_map,
+
             hover_name='App',
             size_max=60,
             title="App Size vs Rating (Bubble size = Installs)"
@@ -91,7 +93,7 @@ if test_mode or (17 <= current_hour_ist <= 19):
             legend_title="Category",
             hovermode="closest"
         )
-
+        
         st.plotly_chart(fig, use_container_width=True)
 else:
     st.warning(f"Graph available only between 5 PM and 7 PM IST. Current IST hour: {current_hour_ist}")

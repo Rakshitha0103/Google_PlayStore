@@ -6,3 +6,9 @@ plotly
 pytz
 streamlit
 translate
+streamlit
+pandas
+plotly
+numpy
+protobuf==3.20.*
+
