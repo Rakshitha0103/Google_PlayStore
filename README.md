@@ -77,25 +77,6 @@ Displayed only between **4 PM and 6 PM IST**.
 
 ---
 
-## ⚙️ How to Run
-
-1. Clone the repository  
-   ```bash
-   git clone https://github.com/yourusername/Google_PlayStore_Analytics.git
-   cd Google_PlayStore_Analytics
-
-2. Install dependencies
-    ```bash
-    pip install -r requirements.txt
-
-3. Run any task file
-    ```bash
-    streamlit run scripts/Task4_Streamlit_App.py
-
-4. For the Streamlit dashboard
-    ```bash
-    streamlit run scripts/Task4_Streamlit_App.py
-
 ##  Notes
 
 - The project follows time-based conditions as mentioned in each task.  
