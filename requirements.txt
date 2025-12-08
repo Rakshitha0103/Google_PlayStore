@@ -2,7 +2,5 @@ pandas
 numpy
 matplotlib
 seaborn
-plotly
-pytz
-translate
-
+scikit-learn
+voila
